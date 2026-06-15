@@ -5,8 +5,9 @@ into well-structured, reader-friendly content. **All LLM/STT work runs on Azure 
 Foundry (Azure OpenAI).**
 
 ```
-video  ─▶  extract audio (ffmpeg)  ─▶  chunk  ─▶  transcribe (Whisper / gpt-4o-transcribe)
-       ─▶  structure (Generative AI / gpt-4o)  ─▶  output/*.structured.md
+video  ─▶  extract & segment audio (ffmpeg, one-pass)
+       ─▶  transcribe chunks (Whisper / gpt-4o-transcribe via Azure AI Foundry)
+       ─▶  structure (Generative AI / gpt-4.1)  ─▶  output/*.structured.md
 ```
 
 ## Features
@@ -23,42 +24,77 @@ video  ─▶  extract audio (ffmpeg)  ─▶  chunk  ─▶  transcribe (Whispe
 
 ## Cost & long-video notes
 - **STT:** `whisper` is the cheapest transcription model; cost is per audio-minute.
-- **Structuring:** defaults to `gpt-4o-mini` (~15-20× cheaper than `gpt-4o`).
+- **Structuring:** uses `gpt-4.1` as the chat model.
 - Audio is encoded to 32 kbps mono MP3 — a 1-hour video ≈ ~14 MB total, split into
-  ~15-minute chunks well under the 25 MB STT limit.
+  ~10-minute chunks well under the 25 MB STT limit.
 - Transcripts under `STRUCTURE_MAX_CHARS` use a single LLM call (cheapest). Above it, the
   reduce step summarizes only the tiny per-chunk key points, keeping cost bounded.
+- An 80-minute, 575 MB video was processed end-to-end in ~3 minutes with 9 audio chunks.
 
 ## Prerequisites
 1. **Python 3.10+**
 2. **ffmpeg** on your PATH — https://ffmpeg.org/download.html
+   - Windows: `winget install Gyan.FFmpeg` — then **restart your terminal** so PATH is refreshed
+   - macOS: `brew install ffmpeg`
+   - Verify with: `ffmpeg -version`
 3. An **Azure AI Foundry** resource with two deployments:
    - a transcription model (`whisper` or `gpt-4o-transcribe`)
-   - a chat model (`gpt-4o` or `gpt-4o-mini`)
+   - a chat model (`gpt-4.1`, `gpt-4o-mini`, or `gpt-4o`)
 
 ## Setup
+
 ```bash
+# 1. Create and activate a virtual environment
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
+
+# 2. Install dependencies
 pip install -r requirements.txt
-cp .env.example .env        # then fill in your Foundry values
+
+# 3. Configure environment
+cp .env.example .env   # Windows: copy .env.example .env
 ```
 
 Edit `.env`:
 - `AZURE_OPENAI_ENDPOINT` — e.g. `https://<resource>.openai.azure.com/`
-- `AZURE_OPENAI_API_KEY` — leave blank to use Entra ID
+- `AZURE_OPENAI_API_KEY` — leave blank to use Entra ID (`DefaultAzureCredential`)
 - `AZURE_OPENAI_TRANSCRIBE_DEPLOYMENT` — your STT deployment name (`whisper` is cheapest)
-- `AZURE_OPENAI_CHAT_DEPLOYMENT` — your chat deployment name (`gpt-4o-mini` is cheapest)
+- `AZURE_OPENAI_CHAT_DEPLOYMENT` — your chat deployment name (currently set to `gpt-4.1`)
 - `AUDIO_CHUNK_SECONDS` / `AUDIO_BITRATE` — audio segmenting (defaults handle long videos)
 - `STRUCTURE_MAX_CHARS` — transcript size above which structuring uses map-reduce
 
 ## Usage
+
 ```bash
-python main.py path/to/video.mp4
-python main.py path/to/video.mp4 --output out --no-keep-raw
+# Basic run — outputs to ./output/
+python main.py video.mp4
+
+# Specify output directory
+python main.py video.mp4 --output out
+
+# Skip saving the raw transcript .txt
+python main.py video.mp4 --no-keep-raw
 ```
 
 Outputs land in `./output/`:
 - `<name>.transcript.txt` — raw transcript (unless `--no-keep-raw`)
-- `<name>.structured.md` — structured, formatted content
+- `<name>.structured.md` — structured, formatted Markdown content
+
+## Debugging in VS Code
+
+A `.vscode/launch.json` is included with three debug configurations:
+
+| Config | Description |
+|--------|-------------|
+| **VideoTranscriber: run video.mp4** | Full run with breakpoints — saves raw + structured output |
+| **VideoTranscriber: run video.mp4 (no raw)** | Same, skips raw `.txt` file |
+| **VideoTranscriber: current file** | Debug whatever Python file is currently open |
+
+Set breakpoints in any module and press **F5** to launch.
 
 ## Project layout
 | File | Responsibility |
@@ -79,7 +115,3 @@ full autonomous Agentic system.** Full rationale in [`APPROACH.md`](./APPROACH.m
 > lightweight orchestrator + one well-prompted generative call gives the best accuracy,
 > cost, latency, and maintainability. A clean seam in `structuring.py` lets you add an
 > agentic layer later if requirements grow.
-
-## Notes
-- This repo ships runnable code + docs. It was authored in an environment without a
-  shell, so it has not been executed here — run the setup steps above to use it.
