@@ -10,10 +10,11 @@ import os
 import time
 from dataclasses import dataclass
 
-import audio
-import transcription
-import structuring
-from config import Settings, build_client
+from .core import audio, transcription, structuring
+from . import config
+
+Settings = config.Settings
+build_client = config.build_client
 
 
 @dataclass

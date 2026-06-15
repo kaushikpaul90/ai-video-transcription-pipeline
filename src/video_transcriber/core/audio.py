@@ -1,4 +1,4 @@
-"""Audio extraction and chunking for long videos — cross-platform (Windows/macOS/Linux).
+"""Audio extraction and chunking for long  cross-platform (Windows/macOS/Linux).videos 
 
 A single streaming ffmpeg pass converts the video to low-bitrate, mono, 16 kHz MP3 and
 splits it into fixed-duration segments at the same time. This:
@@ -38,8 +38,20 @@ def extract_and_segment(
     Uses optimized libmp3lame settings for faster encoding.
     """
     _require_ffmpeg()
-    if not os.path.isfile(video_path):
-        raise FileNotFoundError(f"Video file not found: {video_path}")
+    
+    # Resolve video path: check current location, then data/ subdirectory
+    resolved_path = video_path
+    if not os.path.isfile(resolved_path):
+        data_path = os.path.join(os.getcwd(), "data", video_path)
+        if os.path.isfile(data_path):
+            resolved_path = data_path
+        else:
+            raise FileNotFoundError(
+                f"Video file not found: {video_path}\n"
+                f"  Checked: {video_path} and data/{video_path}"
+            )
+    
+    video_path = resolved_path
 
     chunk_dir = os.path.join(workdir, "chunks")
     os.makedirs(chunk_dir, exist_ok=True)

@@ -19,7 +19,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from config import Settings
+from .. import config
+
+Settings = config.Settings
 
 SYSTEM_PROMPT = """You are an expert content editor. You convert raw, machine-generated
 speech-to-text transcripts into clean, well-structured, reader-friendly documents.

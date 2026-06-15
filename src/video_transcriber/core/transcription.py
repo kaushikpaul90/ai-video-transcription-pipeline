@@ -7,7 +7,9 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 from typing import List
-from config import Settings
+from .. import config
+
+Settings = config.Settings
 
 
 def transcribe_chunk(client, deployment: str, chunk_path: str) -> tuple[int, str]:
