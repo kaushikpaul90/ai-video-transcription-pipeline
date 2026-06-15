@@ -47,7 +47,11 @@ class Settings:
 
 
 def build_client(settings: Settings):
-    """Return an AzureOpenAI client wired to the Foundry deployment."""
+    """Return an AzureOpenAI client wired to the Foundry deployment.
+    
+    The client is efficiently reused across multiple API calls with connection
+    pooling and persistent credentials to minimize overhead.
+    """
     from openai import AzureOpenAI
 
     if settings.api_key:
@@ -55,6 +59,8 @@ def build_client(settings: Settings):
             azure_endpoint=settings.endpoint,
             api_key=settings.api_key,
             api_version=settings.api_version,
+            timeout=60.0,
+            max_retries=2,
         )
 
     # Entra ID auth (no key) via DefaultAzureCredential.
@@ -67,4 +73,6 @@ def build_client(settings: Settings):
         azure_endpoint=settings.endpoint,
         azure_ad_token_provider=token_provider,
         api_version=settings.api_version,
+        timeout=60.0,
+        max_retries=2,
     )

@@ -35,6 +35,7 @@ def extract_and_segment(
     """Extract audio and split it into <= chunk_seconds MP3 segments in one ffmpeg pass.
 
     Returns an ordered list of chunk file paths. Short videos yield a single chunk.
+    Uses optimized libmp3lame settings for faster encoding.
     """
     _require_ffmpeg()
     if not os.path.isfile(video_path):
@@ -52,6 +53,7 @@ def extract_and_segment(
         "-ar", "16000",              # 16 kHz (plenty for speech STT)
         "-c:a", "libmp3lame",
         "-b:a", bitrate,             # low bitrate -> tiny, cheap uploads
+        "-q:a", "9",                 # quality 9 = fast encoding with acceptable quality
         "-f", "segment",
         "-segment_time", str(max(1, chunk_seconds)),
         "-reset_timestamps", "1",

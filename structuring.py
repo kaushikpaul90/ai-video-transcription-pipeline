@@ -5,7 +5,8 @@ transcript into formatted Markdown. For very long transcripts (long videos) it w
 costly and could exceed the model context window to do this in one shot, so the module
 automatically switches to a **map-reduce** strategy:
 
-  * map    — structure each transcript chunk into Markdown sections + a few key points;
+  * map    — structure each transcript chunk into Markdown sections + a few key points
+             (in parallel);
   * reduce — synthesize one unified '## Summary' from just the per-chunk key points
              (a tiny, cheap call), then concatenate the structured sections.
 
@@ -14,6 +15,7 @@ This keeps cost bounded and predictable regardless of video length.
 from __future__ import annotations
 
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import List, Tuple
 
@@ -152,20 +154,42 @@ def _structure_single(client, settings: Settings, transcript: str) -> str:
     )
 
 
+def _process_chunk(args: tuple) -> tuple[int, str, str]:
+    """Process a single chunk in the map phase. Returns (index, key_points, content)."""
+    client, settings, i, total, chunk = args
+    mapped = _chat(
+        client,
+        settings,
+        MAP_SYSTEM_PROMPT,
+        MAP_USER_TEMPLATE.format(index=i, total=total, chunk=chunk),
+    )
+    key_points, content = _parse_map_output(mapped)
+    return i, key_points, content
+
+
 def _structure_map_reduce(client, settings: Settings, transcript: str) -> str:
     chunks = _split_into_chunks(transcript, settings.structure_max_chars)
     print(f"      transcript is long -> map-reduce over {len(chunks)} part(s)")
 
     all_key_points: List[str] = []
     content_sections: List[str] = []
-    for i, chunk in enumerate(chunks, start=1):
-        mapped = _chat(
-            client,
-            settings,
-            MAP_SYSTEM_PROMPT,
-            MAP_USER_TEMPLATE.format(index=i, total=len(chunks), chunk=chunk),
-        )
-        key_points, content = _parse_map_output(mapped)
+    results = {}
+
+    # Adaptive parallelism: 4-6 workers depending on chunk count
+    max_workers = min(max(4, len(chunks) // 2), 6)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(_process_chunk, (client, settings, i, len(chunks), chunk)): i
+            for i, chunk in enumerate(chunks, start=1)
+        }
+
+        for future in as_completed(futures):
+            idx, key_points, content = future.result()
+            results[idx] = (key_points, content)
+
+    # Preserve order
+    for i in sorted(results.keys()):
+        key_points, content = results[i]
         if key_points:
             all_key_points.append(key_points)
         if content:
