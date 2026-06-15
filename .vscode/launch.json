@@ -21,11 +21,11 @@
             "name": "VideoTranscriber: run video.mp4 (Windows)",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}\\main.py",
             "args": ["video.mp4", "--output", "output"],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             },
@@ -52,11 +52,11 @@
             "name": "VideoTranscriber: run video.mp4 (no raw) - Windows",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/main.py",
+            "program": "${workspaceFolder}\\main.py",
             "args": ["video.mp4", "--output", "output", "--no-keep-raw"],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             },
@@ -82,7 +82,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "justMyCode": true,
             "windows": {}
         }
