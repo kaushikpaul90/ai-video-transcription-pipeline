@@ -2,6 +2,7 @@
 
 Usage:
     python main.py path/to/video.mp4
+    python main.py https://www.youtube.com/watch?v=...
     python main.py path/to/video.mp4 --output out --no-keep-raw
 """
 from __future__ import annotations
@@ -15,10 +16,14 @@ from . import pipeline
 def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="VideoTranscriber",
-        description="Ingest a video, transcribe it, and produce well-structured content "
-        "using Azure AI Foundry.",
+        description="Ingest a video (local file or YouTube URL), transcribe it, and produce "
+        "well-structured content using Azure AI Foundry.",
     )
-    parser.add_argument("video", help="Path to the input video file (mp4, mov, mkv, ...).")
+    parser.add_argument(
+        "video",
+        help="Path to the input video file (mp4, mov, mkv, ...) or a URL "
+        "(YouTube, etc.). URLs are downloaded automatically."
+    )
     parser.add_argument(
         "-o", "--output", default="output", help="Output directory (default: ./output)."
     )
