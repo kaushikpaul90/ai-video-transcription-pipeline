@@ -5,9 +5,30 @@ into well-structured, reader-friendly content. **All LLM/STT work runs on Azure 
 Foundry (Azure OpenAI).**
 
 ```
-video /        download (       extract & segment audio (ffmpeg, one-pass)if URL) YouTube URL  
-       transcribe chunks (Whisper / gpt-4o-transcribe via Azure AI Foundry)                     
-       structure (Generative AI / gpt-       output/*.structured.md4.1)                       
+Video File / YouTube URL
+            │
+            ▼
+     Download Video
+   (if input is a URL)
+            │
+            ▼
+Audio Extraction & Segmentation
+   (FFmpeg, one-pass)
+            │
+            ▼
+     Transcribe Audio
+ (Whisper / GPT-4o-Transcribe
+   via Azure AI Foundry)
+            │
+            ▼
+      Raw Transcript
+            │
+            ▼
+      Structure Content
+  (Generative AI / GPT-4.1)
+            │
+            ▼
+ output/<filename>.structured.md                       
 ```
 
 ## Features
